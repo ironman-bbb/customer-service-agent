@@ -1,0 +1,7 @@
+[
+  {"order_id":"ORDER-1001","user_id":"USER-001","product":"专业版","amount":1999.0,"days_since_purchase":3,"usage_rate":0.2,"invoice_status":"未开票","is_upgrade":false},
+  {"order_id":"ORDER-1002","user_id":"USER-002","product":"基础版","amount":599.0,"days_since_purchase":12,"usage_rate":0.1,"invoice_status":"普票","is_upgrade":false},
+  {"order_id":"ORDER-1003","user_id":"USER-003","product":"专业版","amount":1999.0,"days_since_purchase":2,"usage_rate":0.75,"invoice_status":"未开票","is_upgrade":false},
+  {"order_id":"ORDER-1004","user_id":"USER-004","product":"企业版","amount":8999.0,"days_since_purchase":1,"usage_rate":0.05,"invoice_status":"专票","is_upgrade":true}
+]
+
