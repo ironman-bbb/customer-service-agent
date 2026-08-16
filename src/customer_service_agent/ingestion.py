@@ -1,9 +1,13 @@
 """Markdown 文档加载、切块与向量化入库。"""
 
-import re
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
+
+from langchain_text_splitters import (
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 from .embeddings import EmbeddingService
 
@@ -15,26 +19,41 @@ class DocumentChunk:
     content: str
 
 
-def split_markdown(path: Path, max_chars: int = 1200) -> list[DocumentChunk]:
-    """保留 Markdown 标题语义，并将过长段落按字符数继续切分。"""
+def split_markdown(
+    path: Path,
+    chunk_size: int = 500,
+    chunk_overlap: int = 80,
+) -> list[DocumentChunk]:
+    """先按 Markdown 标题分组，再递归切分过长章节。"""
 
     text = path.read_text(encoding="utf-8")
-    sections = re.split(r"\n(?=#{1,6}\s)|\n\s*\n", text)
-    pieces: list[str] = []
-    current_heading = ""
+    header_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=[
+            ("#", "一级标题"),
+            ("##", "二级标题"),
+            ("###", "三级标题"),
+            ("####", "四级标题"),
+            ("#####", "五级标题"),
+            ("######", "六级标题"),
+        ],
+        strip_headers=False,
+    )
+    sections = header_splitter.split_text(text)
 
-    for section in sections:
-        section = section.strip()
-        if not section:
-            continue
-        if section.startswith("#"):
-            lines = section.splitlines()
-            current_heading = lines[0]
-        content = f"{current_heading}\n{section}" if current_heading not in section else section
-        for start in range(0, len(content), max_chars):
-            piece = content[start : start + max_chars].strip()
-            if piece:
-                pieces.append(piece)
+    recursive_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
+    )
+    documents = recursive_splitter.split_documents(sections)
+    pieces = [
+        document.page_content.strip()
+        for document in documents
+        if any(
+            line.strip() and not line.lstrip().startswith("#")
+            for line in document.page_content.splitlines()
+        )
+    ]
 
     chunks: list[DocumentChunk] = []
     for index, content in enumerate(pieces):
@@ -74,4 +93,3 @@ def vectorize_chunks(
             for chunk, vector in zip(batch, vectors, strict=True)
         )
     return rows
-
