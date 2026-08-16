@@ -33,6 +33,7 @@ def main() -> None:
 
     try:
         from langgraph.checkpoint.postgres import PostgresSaver
+        from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
     except ImportError as error:
         raise RuntimeError("请先安装项目依赖：python -m pip install -e .") from error
 
@@ -40,6 +41,12 @@ def main() -> None:
     embedding_service = EmbeddingService(settings)
     knowledge = MilvusKnowledgeStore(settings, embedding_service)
     with PostgresSaver.from_conn_string(settings.postgres_uri) as checkpointer:
+        checkpointer.serde = JsonPlusSerializer(
+            allowed_msgpack_modules=[
+                ("customer_service_agent.schemas", "CustomerServiceResult"),
+                ("customer_service_agent.schemas", "Intent"),
+            ]
+        )
         # 首次执行会创建 LangGraph 自己的 checkpoint 表。
         checkpointer.setup()
         agent = create_customer_service_agent(
