@@ -1,15 +1,10 @@
 """独立的 Embedding 模型适配层。"""
 
 from .config import Settings
-
+from langchain_openai import OpenAIEmbeddings
 
 class EmbeddingService:
     def __init__(self, settings: Settings) -> None:
-        try:
-            from langchain_openai import OpenAIEmbeddings
-        except ImportError as error:
-            raise RuntimeError("请先安装项目依赖：python -m pip install -e .") from error
-
         self._dimensions = settings.embedding_dimensions
         self._client = OpenAIEmbeddings(
             model=settings.embedding_model_name,
